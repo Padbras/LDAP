@@ -54,13 +54,15 @@ error_reporting(E_ALL);
 		echo 'RESULTAT DU CHGMT DE PASSWD: ' . $r . '<br />';
 	}
 	//ok
-	function addGroup($ldapconn){
+	function addGroup($ldapconn, $groupcn, $memberUid){
 			// TODO Link à Formulaire l'entrée des donnees
-		$dn = "cn=paumesdelavie3,ou=group, dc=bla,dc=com";
+		$r = rand(1000,9999);
+		$dn = "cn=".$groupcn.",ou=group, dc=bla,dc=com";
 		$info["objectClass"][0] = "top";
 		$info["objectClass"][1] = "posixGroup";
-		$info["cn"] = "paumesdelavie3";
-		$info["gidNumber"] = "1227";	
+		$info["memberUid"] = $memberUid;
+		$info["cn"] = $groupcn;
+		$info["gidNumber"] = $r;	
 		$r = ldap_add($ldapconn,  $dn, $info);
 		echo 'RESULTAT DU ADD: ' . $r . '<br />';
 	}
@@ -217,7 +219,7 @@ objectClass: posixGroup
 	
 	
 
-	echo "Salut bande de salopes!" ;
+
 // Eléments d'authentification LDAP
 	$ldaprdn  = 'cn=admin,dc=bla,dc=com';     // DN ou RDN LDAP
 	$ldappass = 'bla';  // Mot de passe associé
@@ -243,7 +245,7 @@ objectClass: posixGroup
 		 //addUser($ldapconn);
 		//deleteUser($ldapconn);
 		//listAllUsers($ldapconn);
-		addGroup($ldapconn);
+		//addGroup($ldapconn);
 		listAllGroups($ldapconn);
 		
 		//echo 'Fermeture de la connexion';
