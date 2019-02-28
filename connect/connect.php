@@ -16,6 +16,13 @@ error_reporting(E_ALL);
   * 
   * */
   
+  /*
+   * Admin: change pas cn, dn, uid (peut changer sn, givenname, userPassword, homeDirectory)
+   * Users: Password
+   * 
+   * Admin: peut modifier groupe (DESCRIPTION et memberUid)
+   * 
+  */
   // ADDING
   
 	function addUser($ldapconn,$firstname,$lastname,$pwd){
@@ -43,18 +50,39 @@ error_reporting(E_ALL);
     echo 'RESULTAT DU ADD: ' . $r . '<br />';
 	}
 	
+	function modifyUser($ldapconn, $userUID ,$firstname, $lastname, $pwd, $homedir){
+		$filter="uid=".$userUID;
+		$sr=ldap_search($ldapconn, " ou=people, dc=bla, dc=com", $filter); 
+		$info = ldap_get_entries($ldapconn, $sr);
+		$userDn = $info[0]["dn"];
+		if($firstname != ""){
+			$entry["firstname"] = $firstname; 
+		}
+		if($lastname != ""){
+			$entry["lastname"] = $lastname; 
+		}
+		if($pwd != ""){
+			$entry["pwd"] = $pwd; 
+		}
+		if($homedir != ""){
+			$entry["homedir"] = $homedir; 
+		}
+		$r = ldap_mod_replace($ldapconn,$userDn, $entry); 
+		echo 'RESULTAT DU MODIFY USER: ' . $r . '<br />';
+	}
+	
 	//
 	function modifyPassword($ldapconn, $userUID, $newPasswd){
 		$filter="uid=".$userUID;
-		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
+		$sr=ldap_search($ldapconn, " ou=people, dc=bla, dc=com", $filter); 
 		$info = ldap_get_entries($ldapconn, $sr);
 		$userDn = $info[0]["dn"];
-		$entry[userPassword] = $newPasswd; 
+		$entry["userPassword"] = $newPasswd; 
 		$r = ldap_mod_add($ldapconn,$userDn, $entry); 
 		echo 'RESULTAT DU CHGMT DE PASSWD: ' . $r . '<br />';
 	}
 	//ok
-	function addGroup($ldapconn, $groupcn, $memberUid){
+	function addGroup($ldapconn, $groupcn, $memberUid){ // TODO ADD DESCRIPTION
 			// TODO Link à Formulaire l'entrée des donnees
 		$r = rand(1000,9999);
 		$dn = "cn=".$groupcn.",ou=group, dc=bla,dc=com";
@@ -71,9 +99,10 @@ error_reporting(E_ALL);
 		
 		$sr=ldap_search($ldapconn, "dc=bla, dc=com", "cn=".$groupCn); 
 		$rank = ldap_count_entries($ldapconn,$sr) - 1; 
-         
-		$dn = "cn=".$groupCn.",dc=bla,dc=com";
+		$dn = "cn=".$groupCn.",ou=group,dc=bla,dc=com";
 		$entry["memberUid"][$rank] = $userUID;
+		echo $entry; 
+		echo $dn; 
 		$r = ldap_mod_add($ldapconn,$dn, $entry); 
 		echo 'RESULTAT DU ADDUSERTOGROUP: ' . $r . '<br />';
 	}
@@ -101,7 +130,7 @@ error_reporting(E_ALL);
 	// Utilisation: bouton tout supprimer	
 	function deleteAllUsers($ldapconn){
 		
-		$sr=ldap_search($ldapconn, "dc=bla, dc=com", "uid=*"); 
+		$sr=ldap_search($ldapconn, "ou=people, dc=bla, dc=com", "uidNumber=*"); 
    
 		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
          . '<br />';
@@ -109,9 +138,25 @@ error_reporting(E_ALL);
 		$info = ldap_get_entries($ldapconn, $sr);
 
 		for ($i=0; $i<$info["count"]; $i++) {
-			deleteUser($ldapconn, $info[$i]["uid"]);
+			deleteUser($ldapconn, $info[$i]["uid"][0]);
 		}	
 	}	
+	
+	function deleteAllGroups($ldapconn){
+		
+		$sr=ldap_search($ldapconn, "ou=group, dc=bla, dc=com", "gidNumber=*"); 
+   
+		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
+         . '<br />';
+
+		$info = ldap_get_entries($ldapconn, $sr);
+
+		for ($i=0; $i<$info["count"]; $i++) {
+			
+			deleteGroup($ldapconn, $info[$i]["cn"][0]);
+		}	
+		
+	}
 	
 	function listAllGroups($ldapconn){
 	
@@ -132,12 +177,12 @@ error_reporting(E_ALL);
 	function listAllGroupsWhereUser($ldapconn, $userUID){
 		
 		$filter="memberUid=".$userUID;
-		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
+		$sr=ldap_search($ldapconn, "ou=group, dc=bla, dc=com", $filter); 
 		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
          . '<br />';
 		$info = ldap_get_entries($ldapconn, $sr);
 		for ($i=0; $i<$info["count"]; $i++) {
-			echo 'dn  : ' . $info[$i]["givenname"]["dn"] . '<br />';
+			echo 'dn  : ' . $info[$i]["dn"] . '<br />';
 		}
 	}
 	
@@ -152,17 +197,19 @@ error_reporting(E_ALL);
 		$filter2="memberUid=".$userUID;
 		$sr=ldap_search($ldapconn, "ou=group,dc=bla,dc=com", $filter); 
 		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) . '<br />';
+		echo "kek";
 		$info = ldap_get_entries($ldapconn, $sr);
-
-		for ($i=0; $i<$info["count"]; $i++) {
-			$info[$i]["memberUID"] = $userUID;
-			$r = ldap_mod_del($ldapconn, $info[$i]["dn"] );
-			echo 'Le résultat de la suppression est ' . $r . '<br />';
-			  //unset($info[$i]["memberUID"][$rank]);
+		echo $info[0]; 
+		for ($i=0; $i<$info[$i]; $i++) {
+			//$info[$i]["memberUID"] = $userUID;
+			echo "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL";
+			//$r = ldap_mod_del($ldapconn, $info[$i]["dn"] );
+			echo $info[$i]["memberUID"];
+			//  unset($info[$i]["memberUID"][$rank]);
 		}
 		
-		$r = ldap_delete ($ldapconn ,$userDn );
-		echo 'Le résultat de la suppression est ' . $r . '<br />';
+		//$r = ldap_delete ($ldapconn ,$userDn );
+		//echo 'Le résultat de la suppression est ' . $r . '<br />';
 	}
 	
 	function deleteUserOld($ldapconn, $userUID){
@@ -183,7 +230,7 @@ error_reporting(E_ALL);
 		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
 		$info = ldap_get_entries($ldapconn, $sr);
 		$groupDn = $info[0]["dn"];
-		echo "<pre>"; print_r($info) ;echo"</pre>";
+		//echo "<pre>"; print_r($info) ;echo"</pre>";
 		$r = ldap_delete ($ldapconn ,$groupDn );
 		echo 'Le résultat de la suppression est ' . $r . '<br />';
 		
@@ -244,16 +291,20 @@ objectClass: posixGroup
 		}
 		 //addUser($ldapconn);
 		//deleteUser($ldapconn);
-		//listAllUsers($ldapconn);
-		//addGroup($ldapconn);
-		listAllGroups($ldapconn);
 		
+		echo "USERS:"; 
+		listAllUsers($ldapconn);
+		//addGroup($ldapconn);
+		echo "GROUPS:"; 
+		listAllGroups($ldapconn);
+		echo "GROUPS DE PESTELLE:"; 
+		listAllGroupsWhereUser($ldapconn, "Corentin");
 		//echo 'Fermeture de la connexion';
 		
 		//modifyPassword($ldapconn, "john2", "test");
 		//deleteGroup($ldapconn, "paumesdelavie");
 		//addUserToGroup($ldapconn, "john", "paumesdelavie");
-		//listAllGroupsWhereUser($ldapconn, "ivrogne");
+		
 		//deleteUser($ldapconn, "ivrogne");
 		//ldap_close($ldapconn);
     } 
