@@ -5,28 +5,7 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
- /***
-  * 
-  * https://www.theurbanpenguin.com/managing-openldap-users-with-php/
-  * 
-  * user : add, rm, modifier
-  * group : add, remove,modifier
-  * connexion : admin -> all
-  * user -> seulement modifier
-  * 
-  * */
-  
-  /*
-   * Admin: change pas cn, dn, uid (peut changer sn, givenname, userPassword, homeDirectory)
-   * Users: Password
-   * 
-   * Admin: peut modifier groupe (DESCRIPTION et memberUid)
-   * 
-  */
-  // ADDING
-  
 	function addUser($ldapconn,$firstname,$lastname,$pwd){
-	// TODO Link à Formulaire l'entrée des donnees
 	$r = rand(1000,9999);
 	$dn = "uid=".$firstname.",ou=people,dc=bla,dc=com";
 	$info["objectClass"][0] = "top";
@@ -47,31 +26,48 @@ error_reporting(E_ALL);
     $info["uid"] = $firstname;
        
     $r = ldap_add($ldapconn,  $dn, $info);
-    echo 'RESULTAT DU ADD: ' . $r . '<br />';
+    
 	}
 	
 	function modifyUser($ldapconn, $userUID ,$firstname, $lastname, $pwd, $homedir){
 		$filter="uid=".$userUID;
 		$sr=ldap_search($ldapconn, " ou=people, dc=bla, dc=com", $filter); 
-		$info = ldap_get_entries($ldapconn, $sr);
-		$userDn = $info[0]["dn"];
-		if($firstname != ""){
-			$entry["firstname"] = $firstname; 
-		}
-		if($lastname != ""){
-			$entry["lastname"] = $lastname; 
-		}
-		if($pwd != ""){
-			$entry["pwd"] = $pwd; 
-		}
-		if($homedir != ""){
-			$entry["homedir"] = $homedir; 
-		}
-		$r = ldap_mod_replace($ldapconn,$userDn, $entry); 
-		echo 'RESULTAT DU MODIFY USER: ' . $r . '<br />';
+		$entries = ldap_get_entries($ldapconn, $sr);
+		$userDn = $entries[0]["dn"];
+		echo $userDn;
+		
+		/*	$info["firstname"] = $firstname; 
+			$info["lastname"] = $lastname; 
+			$info["pwd"] = $pwd; 
+			$info["homedir"] = $homedir; */
+			
+		$modif =[
+			[
+				"attrib" =>"firstname",
+				"modtype" => LDAP_MODIFY_BATCH_REPLACE,
+				"values"  => [$firstname],
+			],
+						[
+				"attrib" =>"lastname",
+				"modtype" => LDAP_MODIFY_BATCH_REPLACE,
+				"values"  => [$lastname],
+			],
+						[
+				"attrib" =>"pwd",
+				"modtype" => LDAP_MODIFY_BATCH_REPLACE,
+				"values"  => [$pwd],
+			],
+						[
+				"attrib" =>"homedir",
+				"modtype" => LDAP_MODIFY_BATCH_REPLACE,
+				"values"  => [$homedir],
+			],
+		];
+		
+		$r = ldap_modify_batch($ldapconn,$userDn, $modif); 
+		ldap_rename($ldapconn,$userDn,"uid=".$userUID,NULL,TRUE);
 	}
 	
-	//
 	function modifyPassword($ldapconn, $userUID, $newPasswd){
 		$filter="uid=".$userUID;
 		$sr=ldap_search($ldapconn, " ou=people, dc=bla, dc=com", $filter); 
@@ -79,22 +75,21 @@ error_reporting(E_ALL);
 		$userDn = $info[0]["dn"];
 		$entry["userPassword"] = $newPasswd; 
 		$r = ldap_mod_add($ldapconn,$userDn, $entry); 
-		echo 'RESULTAT DU CHGMT DE PASSWD: ' . $r . '<br />';
 	}
-	//ok
-	function addGroup($ldapconn, $groupcn, $memberUid){ // TODO ADD DESCRIPTION
-			// TODO Link à Formulaire l'entrée des donnees
+
+	function addGroup($ldapconn, $groupcn, $memberUid, $description){
 		$r = rand(1000,9999);
 		$dn = "cn=".$groupcn.",ou=group, dc=bla,dc=com";
 		$info["objectClass"][0] = "top";
 		$info["objectClass"][1] = "posixGroup";
 		$info["memberUid"] = $memberUid;
+		$info["description"] = $description; 
 		$info["cn"] = $groupcn;
 		$info["gidNumber"] = $r;	
 		$r = ldap_add($ldapconn,  $dn, $info);
-		echo 'RESULTAT DU ADD: ' . $r . '<br />';
+		
 	}
-	//OK
+
 	function addUserToGroup($ldapconn, $userUID, $groupCn){
 		
 		$sr=ldap_search($ldapconn, "dc=bla, dc=com", "cn=".$groupCn); 
@@ -104,12 +99,8 @@ error_reporting(E_ALL);
 		echo $entry; 
 		echo $dn; 
 		$r = ldap_mod_add($ldapconn,$dn, $entry); 
-		echo 'RESULTAT DU ADDUSERTOGROUP: ' . $r . '<br />';
 	}
 	
-	//LISTING
-	// Utilisation: affichage tableau avec tous les utilisateurs
-	//OK
 	function listAllUsers($ldapconn){
 			    
 		$sr=ldap_search($ldapconn, "dc=bla, dc=com", "uid=*"); 
@@ -127,13 +118,10 @@ error_reporting(E_ALL);
 	
 	}
 		
-	// Utilisation: bouton tout supprimer	
 	function deleteAllUsers($ldapconn){
 		
 		$sr=ldap_search($ldapconn, "ou=people, dc=bla, dc=com", "uidNumber=*"); 
    
-		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
-         . '<br />';
 
 		$info = ldap_get_entries($ldapconn, $sr);
 
@@ -145,10 +133,6 @@ error_reporting(E_ALL);
 	function deleteAllGroups($ldapconn){
 		
 		$sr=ldap_search($ldapconn, "ou=group, dc=bla, dc=com", "gidNumber=*"); 
-   
-		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
-         . '<br />';
-
 		$info = ldap_get_entries($ldapconn, $sr);
 
 		for ($i=0; $i<$info["count"]; $i++) {
@@ -160,14 +144,9 @@ error_reporting(E_ALL);
 	
 	function listAllGroups($ldapconn){
 	
-		echo "---------------------------------------------------------";
 		$sr=ldap_search($ldapconn, "ou=group, dc=bla, dc=com", "gidNumber=*"); 
    
-		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) 
-         . '<br />';
-
 		$info = ldap_get_entries($ldapconn, $sr);
-		//echo "<pre>"; print_r($info) ;echo"</pre>";
 		for ($i=0; $i<$info["count"]; $i++) {
 			echo $info[$i]["cn"][0] . '<br />';
 		
@@ -186,75 +165,36 @@ error_reporting(E_ALL);
 		}
 	}
 	
-	// Fonction admin
 	function deleteUser($ldapconn, $userUID){
 	
 		$filter="uid=".$userUID;
 		$sr=ldap_search($ldapconn, "ou=people,dc=bla,dc=com", $filter); 
 		$info = ldap_get_entries($ldapconn, $sr);
 		$userDn = $info[0]["dn"];
-
 		$filter2="memberUid=".$userUID;
-		$sr=ldap_search($ldapconn, "ou=group,dc=bla,dc=com", $filter); 
-		echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn,$sr) . '<br />';
-		echo "kek";
+		$sr=ldap_search($ldapconn, "ou=group,dc=bla,dc=com", $filter2); 
 		$info = ldap_get_entries($ldapconn, $sr);
-		echo $info[0]; 
-		for ($i=0; $i<$info[$i]; $i++) {
-			//$info[$i]["memberUID"] = $userUID;
-			echo "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL";
-			//$r = ldap_mod_del($ldapconn, $info[$i]["dn"] );
-			echo $info[$i]["memberUID"];
-			//  unset($info[$i]["memberUID"][$rank]);
+		$entry["memberUid"][]=$userUID; 
+			
+		for ($i=0; $i<$info["count"]; $i++) {
+			$r = ldap_mod_del($ldapconn, $info[$i]["dn"], $entry );
+			echo $info[$i]["dn"];
 		}
-		
-		//$r = ldap_delete ($ldapconn ,$userDn );
-		//echo 'Le résultat de la suppression est ' . $r . '<br />';
-	}
-	
-	function deleteUserOld($ldapconn, $userUID){
-	
-		$filter="uid=".$userUID;
-		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
-		$info = ldap_get_entries($ldapconn, $sr);
-		$userDn = $info[0]["dn"];
-
-		
 		$r = ldap_delete ($ldapconn ,$userDn );
-		echo 'Le résultat de la suppression est ' . $r . '<br />';
 	}
 	
-	//Fonction admin
+	
+	
 	function deleteGroup($ldapconn, $groupCn){
 		$filter="cn=".$groupCn;
 		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
 		$info = ldap_get_entries($ldapconn, $sr);
 		$groupDn = $info[0]["dn"];
-		//echo "<pre>"; print_r($info) ;echo"</pre>";
 		$r = ldap_delete ($ldapconn ,$groupDn );
-		echo 'Le résultat de la suppression est ' . $r . '<br />';
 		
 	}
 	
 
-	
-	//TODO MODIFY			  //unset($info[$i]["memberUID"][$rank]);
-
-	
-	//TODO IMPORT/EXPORT CSV/JSON
-	
-	
-/*	
-5.12/ Ajouter d'un groupe et liÃ© une entrÃ©e avec
-# cat ~/group.ldif 
-dn: cn=linux,ou=group,dc=bla,dc=com
-cn: linux
-gidNumber: 1200
-memberUid: ivrogne
-objectClass: top
-objectClass: posixGroup
-* 
-*/
 
 	
 	
@@ -264,14 +204,9 @@ objectClass: posixGroup
 	
 	
 	
-	
-
-
-// Eléments d'authentification LDAP
-	$ldaprdn  = 'cn=admin,dc=bla,dc=com';     // DN ou RDN LDAP
-	$ldappass = 'bla';  // Mot de passe associé
+	$ldaprdn  = 'cn=admin,dc=bla,dc=com';     
+	$ldappass = 'bla'; 
  
-// Connexion au serveur LDAP
 	$ldapconn = ldap_connect("localhost")
 		or die("Impossible de se connecter au serveur LDAP.");
  
@@ -280,32 +215,22 @@ objectClass: posixGroup
 
 	if ($ldapconn) {
 		echo 'Liaison ...'; 
-		$r=ldap_bind($ldapconn,"cn=admin,dc=bla,dc=com","bla");     // connexion anonyme, typique
-																	// pour un accès en lecture seule.
-		echo 'Le résultat de connexion est ' . $r . '<br />';
+		$r=ldap_bind($ldapconn,"cn=admin,dc=bla,dc=com","bla");    															
         if ($r){
 			echo "Connexion LDAP réussie...";
 		} 
 		else {
         echo "Connexion LDAP échouée...";
 		}
-		 //addUser($ldapconn);
-		//deleteUser($ldapconn);
-		
+		/*
 		echo "USERS:"; 
 		listAllUsers($ldapconn);
-		//addGroup($ldapconn);
 		echo "GROUPS:"; 
 		listAllGroups($ldapconn);
 		echo "GROUPS DE PESTELLE:"; 
 		listAllGroupsWhereUser($ldapconn, "Corentin");
-		//echo 'Fermeture de la connexion';
+		*/
 		
-		//modifyPassword($ldapconn, "john2", "test");
-		//deleteGroup($ldapconn, "paumesdelavie");
-		//addUserToGroup($ldapconn, "john", "paumesdelavie");
-		
-		//deleteUser($ldapconn, "ivrogne");
 		//ldap_close($ldapconn);
     } 
     else {
@@ -327,6 +252,54 @@ function disconnect($ldapconn){
 }
 */
 
+	
+	//TODO MODIFY		
+
+	
+	//TODO IMPORT/EXPORT CSV/JSON
+	
+	 /***
+  * 
+  * https://www.theurbanpenguin.com/managing-openldap-users-with-php/
+  * 
+  * user : add, rm, modifier
+  * group : add, remove,modifier
+  * connexion : admin -> all
+  * user -> seulement modifier
+  * 
+  * */
+  
+  /*
+   * Admin: change pas cn, dn, uid (peut changer sn, givenname, userPassword, homeDirectory)
+   * Users: Password
+   * 
+   * Admin: peut modifier groupe (DESCRIPTION et memberUid)
+   * 
+  */
+  
+  /*function deleteUserOld($ldapconn, $userUID){
+	
+		$filter="uid=".$userUID;
+		$sr=ldap_search($ldapconn, "dc=bla, dc=com", $filter); 
+		$info = ldap_get_entries($ldapconn, $sr);
+		$userDn = $info[0]["dn"];
+
+		
+		$r = ldap_delete ($ldapconn ,$userDn );
+		echo 'Le résultat de la suppression est ' . $r . '<br />';
+	}*/
+	
+/*	
+5.12/ Ajouter d'un groupe et liÃ© une entrÃ©e avec
+# cat ~/group.ldif 
+dn: cn=linux,ou=group,dc=bla,dc=com
+cn: linux
+gidNumber: 1200
+memberUid: ivrogne
+objectClass: top
+objectClass: posixGroup
+* 
+*/
 
  //connect($ldapconn);
  //disconnect($ldapconn);

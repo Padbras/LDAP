@@ -35,14 +35,16 @@
 		
 		<h1>Add Group</h1>
 	<hr>
-		<?php if(isset($_POST['groupCn'], $_POST['memberUid'])){
-			addGroup($ldapconn,$_POST['groupCn'], $_POST['memberUid'] );
+		<?php if(isset($_POST['groupCn'], $_POST['memberUid'], $_POST['description'])){
+			addGroup($ldapconn,$_POST['groupCn'], $_POST['memberUid'], $_POST['description'] );
 			}?>
 		<form action = "ldapTest.php" method = "post">
 			<p>
 				<label for="groupCn">groupCn:</label> <input type="text" class="input" id="groupCn" name="groupCn">
 				<br><label for="memberUid">memberUid:</label> <input type="text" class="input" id="memberUid" name="memberUid">
+				<br><label for="description">description:</label> <input type="text" class="input" id="description" name="description">
 				<br><label>&nbsp</label><input type="submit" value="submit" class="button">
+				
 			</p>
 		</form>
 		
