@@ -91,16 +91,36 @@
 		
 		<h1>Modify User (admin)</h1>
 	<hr>
-		<?php 
-			modifyUser($ldapconn, $_POST['userUID'],$_POST['firstname'], $_POST['lastname'],$_POST['pwd'], $_POST['homedir']);
+		
+		<?php if(isset($_POST['userUID2'],$_POST['firstname2'],$_POST['lastname2'], $_POST['pwd2'], $_POST['homedir2'])){
+			modifyUser($ldapconn, $_POST['userUID2'],$_POST['firstname2'], $_POST['lastname2'],$_POST['pwd2'], $_POST['homedir2']);
+			}
 			?>
 		<form action = "ldapTest.php" method = "post">
 			<p>
-				<label for="userUID">userUID:</label> <input type="text" class="input" id="userUID" name="userUID">
-				<br><label for="firstname">firstname</label> <input type="text" class="input" id="firstname" name="firstname">
-				<br><label for="lastname">lastname</label> <input type="text" class="input" id="lastname" name="lastname">
-				<br><label for="pwd">pwd</label> <input type="text" class="input" id="pwd" name="pwd">
-				<br><label for="homedir">homedir</label> <input type="text" class="input" id="homedir" name="homedir">
+				<label for="userUID2">userUID:</label> <input type="text" class="input" id="userUID2" name="userUID2">
+				<br><label for="firstname2">firstname</label> <input type="text" class="input" id="firstname2" name="firstname2">
+				<br><label for="lastname2">lastname</label> <input type="text" class="input" id="lastname2" name="lastname2">
+				<br><label for="pwd2">pwd</label> <input type="text" class="input" id="pwd2" name="pwd2">
+				<br><label for="homedir2">homedir</label> <input type="text" class="input" id="homedir2" name="homedir2">
+				<br><label>&nbsp</label><input type="submit" value="submit" class="button">
+			</p>
+		</form>
+		
+	
+
+<h1>Modify Group (admin)</h1>
+	<hr>
+		
+		<?php if(isset($_POST['groupCn'],$_POST['memberUid'],$_POST['description'])){
+			modifyGroup($ldapconn, $_POST['groupCn'],$_POST['memberUid'], $_POST['description']);
+			}
+			?>
+		<form action = "ldapTest.php" method = "post">
+			<p>
+				<label for="groupCn">groupCn:</label> <input type="text" class="input" id="groupCn" name="groupCn">
+				<br><label for="memberUid">memberUid</label> <input type="text" class="input" id="memberUid" name="memberUid">
+				<br><label for="description">description</label> <input type="text" class="input" id="description" name="description">
 				<br><label>&nbsp</label><input type="submit" value="submit" class="button">
 			</p>
 		</form>
@@ -119,6 +139,33 @@
 		<button  type="submit" id="delUser" onclick="delUser" name="btn" value="delU"> Delete All Users </button>
 		<button type="submit" id="delGroup" onclick="delGroup" name="btn" value="delA"> Delete All Groups </button>
 		</form>
+
+<?php 
+					
+					if($_POST['btn'] == "genJson"){
+						generateJson($ldapconn);
+					}
+					
+			?>
+		<form action = "ldapTest.php" method = "post">
+		<button type="submit" id="genJson" onclick="genJson" name="btn" value="genJson"> Generate JSon </button>
+		</form>
+
+<?php 
+					
+					if($_POST['btn'] == "printUserJson"){
+						printUserJson($ldapconn);
+					}
+					
+			?>
+		<form action = "ldapTest.php" method = "post">
+		<button type="submit" id="printUserJson" onclick="printUserJson" name="btn" value="printUserJson"> Import Json </button>
+		</form>
+
+
+	
+
+
 		
 	</body>
 	</head>

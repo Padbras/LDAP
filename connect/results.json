@@ -1,0 +1,42 @@
+{
+    "people": [
+        {
+            "dn": "uid=Corentin,ou=people,dc=bla,dc=com",
+            "sn": "Machin",
+            "givenname": "Bidule",
+            "cn": "Specq Corentin",
+            "userPassword": "pouet",
+            "homeDirectory": "Certes",
+            "uidNumber": "8553",
+            "gidNumber": "8553",
+            "uid": "Corentin"
+        },
+        {
+            "dn": "uid=Pestell,ou=people,dc=bla,dc=com",
+            "sn": "Nico",
+            "givenname": "Pestell",
+            "cn": "Nico Pestell",
+            "userPassword": "lol",
+            "homeDirectory": "\/home\/Pestell",
+            "uidNumber": "7310",
+            "gidNumber": "7310",
+            "uid": "Pestell"
+        }
+    ],
+    "groups": [
+        {
+            "dn": "cn=Testeurs,ou=group,dc=bla,dc=com",
+            "cn": "Testeurs",
+            "memberUid": "",
+            "description": "bisoupoilus",
+            "gidNumber": "5073"
+        },
+        {
+            "dn": "cn=TestTes,ou=group,dc=bla,dc=com",
+            "cn": "TestTes",
+            "memberUid": "test",
+            "description": "testets",
+            "gidNumber": "6246"
+        }
+    ]
+}
