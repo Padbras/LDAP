@@ -13,14 +13,25 @@
         },
         {
             "dn": "uid=Pestell,ou=people,dc=bla,dc=com",
-            "sn": "Nico",
-            "givenname": "Pestell",
-            "cn": "Nico Pestell",
-            "userPassword": "lol",
-            "homeDirectory": "\/home\/Pestell",
+            "sn": "kek",
+            "givenname": "tet",
+            "cn": "tet kek",
+            "userPassword": "lel",
+            "homeDirectory": "ses",
             "uidNumber": "7310",
             "gidNumber": "7310",
             "uid": "Pestell"
+        },
+        {
+            "dn": "uid=Giovanny,ou=people,dc=bla,dc=com",
+            "sn": "Lol",
+            "givenname": "lol",
+            "cn": "lol ",
+            "userPassword": "italien",
+            "homeDirectory": "\/home\/Giovanny",
+            "uidNumber": "6604",
+            "gidNumber": "6604",
+            "uid": "Giovanny"
         }
     ],
     "groups": [
@@ -34,8 +45,8 @@
         {
             "dn": "cn=TestTes,ou=group,dc=bla,dc=com",
             "cn": "TestTes",
-            "memberUid": "test",
-            "description": "testets",
+            "memberUid": null,
+            "description": "kaboum",
             "gidNumber": "6246"
         }
     ]

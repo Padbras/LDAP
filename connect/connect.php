@@ -58,79 +58,37 @@ function importUser($ldapconn, $dn, $sn, $givenname, $cn, $userPassword, $homeDi
 
 function modifyUser($ldapconn, $userUID, $firstname, $lastname, $pwd, $homedir)
 {
+
     $filter  = "uid=" . $userUID;
     $sr      = ldap_search($ldapconn, " ou=people, dc=bla, dc=com", $filter);
     $entries = ldap_get_entries($ldapconn, $sr);
     $userDn  = $entries[0]["dn"];
     echo $userDn;
-    
-    $values1["givenName"] = $firstname;
-    ldap_modify($ldapconn, $userDn, $values1);
-    
-    $values2["sn"] = $lastname;
-    ldap_modify($ldapconn, $userDn, $values2);
-    
-    $values3["userPassword"] = $pwd;
-    ldap_modify($ldapconn, $userDn, $values3);
-    
-    $values4["homeDirectory"] = $homedir;
-    ldap_modify($ldapconn, $userDn, $values4);
-    
-    
-    
-    /*
-    if(!empty($firstname){
-    $values1["givenName"] = $firstname;
-    ldap_modify($ldapconn, $userDn, $values1);
+    $value_lastname      = $entries[0]["sn"][0];
+    $value_firstname     = $entries[0]["givenname"][0];
+
+    if($firstname != ""){
+    $values["givenName"] = $firstname;
+    $value_firstname = $firstname; 
+    //ldap_modify($ldapconn, $userDn, $values1);
     }
-    
-    if(!empty($lastname){
-    $values2["sn"] = $lastname;
-    ldap_modify($ldapconn, $userDn, $values2);
+    if($lastname != ""){    
+    $values["sn"] = $lastname;
+    $value_lastname = $lastname; 
+    //ldap_modify($ldapconn, $userDn, $values2);
+    } 
+    if($pwd != ""){
+    $values["userPassword"] = $pwd;
+    //ldap_modify($ldapconn, $userDn, $values3);
     }
-    
-    if(!empty($pwd){
-    $values3["userPassword"] = $pwd;
-    ldap_modify($ldapconn, $userDn, $values3);
+    if($homedir != ""){
+    $values["homeDirectory"] = $homedir;
+    //ldap_modify($ldapconn, $userDn, $values4);
     }
-    
-    if(!empty($homedir){
-    $values4["loginShell"] = $homedir;
-    ldap_modify($ldapconn, $userDn, $values4);
-    }
-    */
-    
-    
-    /*    $info["firstname"] = $firstname; 
-    $info["lastname"] = $lastname; 
-    $info["pwd"] = $pwd; 
-    $info["homedir"] = $homedir; */
-    
-    /*$modif =[
-    [
-    "attrib" =>"firstname",
-    "modtype" => LDAP_MODIFY_BATCH_REPLACE,
-    "values"  => [$firstname],
-    ],
-    [
-    "attrib" =>"lastname",
-    "modtype" => LDAP_MODIFY_BATCH_REPLACE,
-    "values"  => [$lastname],
-    ],
-    [
-    "attrib" =>"pwd",
-    "modtype" => LDAP_MODIFY_BATCH_REPLACE,
-    "values"  => [$pwd],
-    ],
-    [
-    "attrib" =>"homedir",
-    "modtype" => LDAP_MODIFY_BATCH_REPLACE,
-    "values"  => [$homedir],
-    ],
-    ];
-    
-    $r = ldap_modify_batch($ldapconn,$userDn, $modif); 
-    ldap_rename($ldapconn,$userDn,"uid=".$userUID,NULL,TRUE);*/
+    $values["cn"] = $value_firstname . " " .  $value_lastname;
+
+ldap_modify($ldapconn, $userDn, $values);
+
 }
 
 function modifyGroup($ldapconn, $groupCn, $memberUid, $description)
@@ -140,13 +98,14 @@ function modifyGroup($ldapconn, $groupCn, $memberUid, $description)
     $entries = ldap_get_entries($ldapconn, $sr);
     $userDn  = $entries[0]["dn"];
     echo $userDn;
-    
+    if($memberUid != ""){
     $values1["memberUid"] = $memberUid;
     ldap_modify($ldapconn, $userDn, $values1);
-    
+    }
+    if($description != ""){
     $values2["description"] = $description;
     ldap_modify($ldapconn, $userDn, $values2);
-    
+    }
 }
 
 function modifyPassword($ldapconn, $userUID, $newPasswd)
@@ -156,15 +115,20 @@ function modifyPassword($ldapconn, $userUID, $newPasswd)
     $info                  = ldap_get_entries($ldapconn, $sr);
     $userDn                = $info[0]["dn"];
     $entry["userPassword"] = $newPasswd;
-    $r                     = ldap_mod_add($ldapconn, $userDn, $entry);
+    $r                     = ldap_modify($ldapconn, $userDn, $entry);
 }
 
 function addGroup($ldapconn, $groupcn, $memberUid, $description)
 {
-    $r  = rand(1000, 9999);
-    $dn = "cn=" . $groupcn . ",ou=group, dc=bla,dc=com";
-    
-    
+		$r = rand(1000,9999);
+		$dn = "cn=".$groupcn.",ou=group, dc=bla,dc=com";
+		$info["objectClass"][0] = "top";
+		$info["objectClass"][1] = "posixGroup";
+		$info["memberUid"] = $memberUid;
+		$info["description"] = $description; 
+		$info["cn"] = $groupcn;
+		$info["gidNumber"] = $r;	
+		$r = ldap_add($ldapconn,  $dn, $info);
 }
 
 function importGroup($ldapconn, $dn, $groupcn, $memberUid, $description, $gidNumber)
@@ -199,29 +163,17 @@ function listAllUsers($ldapconn)
     echo 'nombre d\'entrées  :' . ldap_count_entries($ldapconn, $sr) . '<br />';
     
     $info = ldap_get_entries($ldapconn, $sr);
-    
+
+
+ 
     for ($i = 0; $i < $info["count"]; $i++) {
-        
-        echo $info[$i]["dn"];
-        echo '<br />';
-        echo $info[$i]["sn"][0];
-        echo '<br />';
-        echo $info[$i]["givenname"][0];
-        echo '<br />';
-        echo $info[$i]["cn"][0];
-        echo '<br />';
-        echo $info[$i]["userpassword"][0];
-        echo '<br />';
-        echo $info[$i]["homedirectory"][0];
-        echo '<br />';
-        echo $info[$i]["uidnumber"][0];
-        echo '<br />';
-        echo $info[$i]["gidnumber"][0];
-        echo '<br />';
-        echo $info[$i]["uid"][0];
-        echo '<br />';
-        
-    }
+	 $userUid[] = $info[$i]["uid"][0];
+	}
+
+  // echo '<pre>'; print_r($userUid); echo '</pre>';
+    
+
+  return $userUid;
 }
 
 
@@ -289,7 +241,7 @@ function generateJson($ldapconn)
 }
 
 
-function printUserJson($ldapconn)
+function printUserJson($ldapconn) //Bouton recherche fichier
 {
     
     $string    = file_get_contents("/var/www/html/connect/results.json");
@@ -335,14 +287,16 @@ function listAllGroups($ldapconn)
     $sr = ldap_search($ldapconn, "ou=group, dc=bla, dc=com", "gidNumber=*");
     
     $info = ldap_get_entries($ldapconn, $sr);
+    
+   
     for ($i = 0; $i < $info["count"]; $i++) {
-        echo $info[$i]["dn"] . '<br />';
-        echo $info[$i]["cn"][0] . '<br />';
-        echo $info[$i]["memberuid"][0] . '<br />';
-        echo $info[$i]["description"][0] . '<br />';
-        echo $info[$i]["gidnumber"][0] . '<br />';
-        
-    }
+	 $groupCn[] = $info[$i]["cn"][0];
+	}
+
+   //echo '<pre>'; print_r($groupCn); echo '</pre>';
+    
+
+  return $groupCn;
 }
 
 function listAllGroupsWhereUser($ldapconn, $userUID)

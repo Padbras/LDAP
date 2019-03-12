@@ -163,6 +163,29 @@
 		</form>
 
 
+<?php 
+					
+					if($_POST['btn'] == "listAllUsers"){
+						listAllUsers($ldapconn);
+					}
+					
+			?>
+		<form action = "ldapTest.php" method = "post">
+		<button type="submit" id="listAllUsers" onclick="listAllUsers" name="btn" value="listAllUsers"> listAllUsers  </button>
+		</form>
+
+
+<?php 
+					
+					if($_POST['btn'] == "listAllGroups"){
+						listAllGroups($ldapconn);
+					}
+					
+			?>
+		<form action = "ldapTest.php" method = "post">
+		<button type="submit" id="listAllGroups" onclick="listAllGroups" name="btn" value="listAllGroups"> listAllGroups  </button>
+		</form>
+
 	
 
 
